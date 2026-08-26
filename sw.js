@@ -1,4 +1,6 @@
-const CACHE = "garage-circuit-v2"; // bumped: forces old cache-first entries to retire
+// v3 — cache name bumped so any device still holding an older cache-first
+// worker drops its stale copies on activate.
+const CACHE = "garage-circuit-v3";
 const STATIC_ASSETS = ["./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -8,9 +10,9 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
@@ -20,10 +22,8 @@ self.addEventListener("fetch", (e) => {
   const isNavigation = e.request.mode === "navigate" || e.request.destination === "document";
 
   if (isNavigation) {
-    // Network-first for the app itself: whenever you're online, you always get
-    // the current build immediately (no more "second launch" wait, and no
-    // reason to ever clear site storage just to see an update). Falls back to
-    // the last cached copy only when offline, so the app still works in the garage.
+    // Network-first for the app itself: online means you always get the current
+    // build immediately. Falls back to cache only when offline.
     e.respondWith(
       fetch(e.request)
         .then((res) => {
@@ -36,7 +36,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Static assets (icons, manifest): cache-first is fine, they rarely change.
+  // Static assets: cache-first is fine, they rarely change.
   e.respondWith(
     caches.match(e.request).then((cached) => {
       const fetched = fetch(e.request)
