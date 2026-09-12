@@ -1,6 +1,6 @@
 // v3 — cache name bumped so any device still holding an older cache-first
 // worker drops its stale copies on activate.
-const CACHE = "garage-circuit-v7";
+const CACHE = "garage-circuit-v8";
 const STATIC_ASSETS = ["./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
